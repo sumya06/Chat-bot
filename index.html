@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <div
+        style="position: absolute; top: 20px; text-align: center; width: 100%; font-size: 20px; font-weight: bold; color: #58a6ff;">
+        Chatbot by Sumya 💬
+    </div>
+
+    <meta charset="UTF-8" />
+    <title>Gemini Style Chatbot</title>
+    <style>
+        body {
+            background: #0d1117;
+            color: white;
+            font-family: "Segoe UI", sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .chat-box {
+            background: #161b22;
+            width: 500px;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 0 15px #58a6ff;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .messages {
+            height: 400px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            padding-right: 10px;
+        }
+
+        .message {
+            margin: 10px 0;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .user,
+        .bot {
+            max-width: 80%;
+            padding: 10px 15px;
+            border-radius: 15px;
+            line-height: 1.4;
+            position: relative;
+        }
+
+        .user {
+            background: #238636;
+            align-self: flex-end;
+            border-bottom-right-radius: 0;
+        }
+
+        .bot {
+            background: #30363d;
+            align-self: flex-start;
+            border-bottom-left-radius: 0;
+        }
+
+        .avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #58a6ff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .bot-avatar {
+            background: #ffa657;
+        }
+
+        .input-group {
+            display: flex;
+        }
+
+        input {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 5px 0 0 5px;
+        }
+
+        button {
+            padding: 10px;
+            border: none;
+            background: #238636;
+            color: white;
+            border-radius: 0 5px 5px 0;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="chat-box">
+        <div class="messages" id="messages"></div>
+        <div class="input-group">
+            <input type="text" id="userInput" placeholder="Ask anything..." onkeypress="checkEnter(event)" />
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        function checkEnter(event) {
+            if (event.key === "Enter") {
+                sendMessage();
+            }
+        }
+
+        async function sendMessage() {
+            const userInput = document.getElementById("userInput");
+            const messages = document.getElementById("messages");
+
+            const userText = userInput.value.trim();
+            if (!userText) return;
+
+            // Show user message
+            messages.innerHTML += `
+        <div class="message">
+          <div class="avatar">👤</div>
+          <div class="user">${userText}</div>
+        </div>`;
+            userInput.value = "";
+
+            // Show typing...
+            const typingId = `typing-${Date.now()}`;
+            messages.innerHTML += `
+        <div class="message" id="${typingId}">
+          <div class="avatar bot-avatar">🤖</div>
+          <div class="bot"><i>Typing...</i></div>
+        </div>`;
+            messages.scrollTop = messages.scrollHeight;
+
+            try {
+                const res = await fetch("http://localhost:8000/chat", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ message: userText })
+                });
+
+                const data = await res.json();
+
+                // Replace typing with actual bot reply
+                const typingDiv = document.getElementById(typingId);
+                if (typingDiv) {
+                    typingDiv.innerHTML = `
+            <div class="avatar bot-avatar">🤖</div>
+            <div class="bot">${data.reply}</div>`;
+                }
+
+            } catch (error) {
+                const typingDiv = document.getElementById(typingId);
+                if (typingDiv) {
+                    typingDiv.innerHTML = `
+            <div class="avatar bot-avatar">🤖</div>
+            <div class="bot">❌ Error: ${error.message}</div>`;
+                }
+            }
+
+            messages.scrollTop = messages.scrollHeight;
+        }
+    </script>
+</body>
+
+</html>
